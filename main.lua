@@ -1,5 +1,6 @@
 local state = {}
 suit = require("lib/suit")
+nextState = require("client/menu")
 
 width, height = 960, 540
 function love.load()
@@ -11,8 +12,12 @@ function love.load()
 end
 
 function love.update(dt)
+    if nextState ~= state.current then
+        state.current = nextState
+        state.current.load()
+    end
     state.current.update(dt)
-    print(state.current.name.text)
+
 end
 
 function love.draw()
