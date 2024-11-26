@@ -7,8 +7,15 @@ function menu.load()
 end
 
 function menu.update(dt)
-    suit.Input(name, 100, 100, 200, 30)
-    suit.Input(code, 100, 50, 200, 30)
+    suit.layout:reset(width/2, height/2)
+    suit.layout:padding(10)
+
+    suit.Input(name, {id = 1}, suit.layout:row(200, 30))
+    suit.Label("Name", {id = 2, align = "left"}, suit.layout:left(60, 30))
+    suit.Label("Code", {id = 4, align = "left"}, suit.layout:down(60, 30))
+    suit.Input(code, {id = 3}, suit.layout:right(200, 30))
+    suit.Button("Join", {id = 5}, suit.layout:row(200, 30))
+    
 end
 
 function love.textinput(t)
