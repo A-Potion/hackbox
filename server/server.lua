@@ -4,7 +4,7 @@ local udp = socket.udp()
 udp:settimeout(0)
 udp:setsockname('*', 45165)
 
-local world = {} -- the empty world-state
+local games = {} 
 local data, msg_or_ip, port_or_nil
 local entity, cmd, parms
 
@@ -23,19 +23,22 @@ while running do
 			-- thankfully conversion is easy in lua.
 			x, y = tonumber(x), tonumber(y)
 			-- and finally we stash it away
-			local ent = world[entity] or {x=0, y=0}
-			world[entity] = {x=ent.x+x, y=ent.y+y}
+			local ent = games[entity] or {x=0, y=0}
+			games[entity] = {x=ent.x+x, y=ent.y+y}
 		elseif cmd == 'at' then
 			local x, y = parms:match("^(%-?[%d.e]*) (%-?[%d.e]*)$")
 			assert(x and y) -- validation is better, but asserts will serve.
 			x, y = tonumber(x), tonumber(y)
-			world[entity] = {x=x, y=y}
+			games[entity] = {x=x, y=y}
 		elseif cmd == 'update' then
-			for k, v in pairs(world) do
+			for k, v in pairs(games) do
 				udp:sendto(string.format("%s %s %d %d", k, 'at', v.x, v.y), msg_or_ip,  port_or_nil)
 			end
 		elseif cmd == 'quit' then
 			running = false;
+        elseif cmd == 'new' then
+			local code = math.random(9999)
+            udp:sendto(string.format("%i", code), msg_or_ip, port_or_nil)
         else
 			print("unrecognised command:", cmd)
 		end
