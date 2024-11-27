@@ -14,28 +14,28 @@ function game.load()
     love.window.setTitle("HackBox - Game: " .. code.text)
     udp = socket.udp()
 
-    upd:settimeout(0)
+    udp:settimeout(0)
     udp:setpeername(adress, port)
 
     math.randomseed(os.time())
-    entity  = tostring(ath.random(99999))
+    entity = name.text
 
-    local dg = string.format("%s %s %d %d", entity, "at", 0, 0)
+    local dg = string.format("%s %s %d %d", entity, "at", 100, 100)
     udp:send(dg)
     t = 0
 end
 
-function game.update()
-    t = t + deltatime
+function game.update(dt)
+    t = t + dt
 
     if t > updaterate then
-        local x, y = 0
+        local x, y = 0, 0
         if love.keyboard.isDown('up') then 	y=y-(20*t) end
 		if love.keyboard.isDown('down') then 	y=y+(20*t) end
 		if love.keyboard.isDown('left') then 	x=x-(20*t) end
 		if love.keyboard.isDown('right') then 	x=x+(20*t) end
 
-        local dg = string.format("%s %s %f %f", entity, 'move', x, y)
+        local dg = string.format("%s %s %d %d", entity, 'move', x, y)
 		udp:send(dg)
 
         local dg = string.format("%s %s $", entity, 'update')
