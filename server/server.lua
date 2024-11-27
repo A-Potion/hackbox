@@ -38,6 +38,8 @@ while running do
 			running = false;
         elseif cmd == 'new' then
 			local code = #games + 1
+			print(code)
+			games[code].code = code
             udp:sendto(string.format("%s %i", 'code', code), msg_or_ip, port_or_nil)
         else
 			print("unrecognised command:", cmd)
