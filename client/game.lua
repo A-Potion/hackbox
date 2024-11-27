@@ -41,7 +41,7 @@ function game.update(dt)
         local dg = string.format("%s %s %s %d %d", entity, 'move', code.text, x, y)
 		udp:send(dg)
 
-        local dg = string.format("%s %s %s $", entity, 'update', code)
+        local dg = string.format("%s %s %s", entity, 'update', code.text)
 		udp:send(dg)
 
 		t=t-updaterate

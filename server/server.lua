@@ -16,7 +16,7 @@ while running do
 	if data then
 		-- more of these funky match paterns!
 		entity, cmd, parms = data:match("^(%S*) (%S+) (.*)")
-		print(parms)
+		print(entity)
         if cmd == 'move' then
 
 			code, x, y = parms:match("^([^%s]+)%s+([^%s]+)%s+([^%s]+)")
@@ -26,16 +26,17 @@ while running do
 			x, y = tonumber(x), tonumber(y)
 			-- and finally we stash it away
 			code = tonumber(code)
-			ent = games[code].entity
-			games[code].entity = {x=ent.x+x, y=ent.y+y}
+			ent = games[code][entity]
+			games[code][entity] = {x=ent.x+x, y=ent.y+y}
 		elseif cmd == 'at' then
 			local code, x, y = parms:match("^([^%s]+)%s+([^%s]+)%s+([^%s]+)")
 			assert(x and y) -- validation is better, but asserts will serve.
 			code, x, y = tonumber(code), tonumber(x), tonumber(y)
-			games[code].entity = {x=x, y=y}
-			print("at works")
+			games[code][entity] = {x=x, y=y}
 		elseif cmd == 'update' then
 			code = tonumber(parms:match("([^%s]+)"))
+			print(parms)
+			print(code)
 			for k, v in pairs(games[code]) do
 				udp:sendto(string.format("%s %s %d %d", k, 'at', v.x, v.y), msg_or_ip,  port_or_nil)
 			end
@@ -43,13 +44,14 @@ while running do
 			running = false;
         elseif cmd == 'new' then
 			local code = #games + 1
-			print(code)
+			print("new game with code ", code)
 			games[code] = {}
             udp:sendto(string.format("%s %i", 'code', code), msg_or_ip, port_or_nil)
 		elseif cmd == 'join' then
 			code = tonumber(parms:match("([^%s]+)"))
 			if games[code] then
 				print("Game is active")
+				games[code][entity] = entity
 			else
 				print("Game is not active")
 			end

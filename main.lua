@@ -23,6 +23,3 @@ end
 function love.draw()
     state.current.draw()
 end
-
--- server port: 45165
--- nest ip: 37.27.51.34
