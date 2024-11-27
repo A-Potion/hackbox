@@ -5,7 +5,7 @@ local adress, port = "37.27.51.34", 45165
 local entity
 local updaterate = 0.1
 
-local world = {}
+local games = {code = code}
 local t
 
 local width, height = love.graphics.getDimensions()
@@ -41,6 +41,12 @@ function game.update(dt)
         local dg = string.format("%s %s $", entity, 'update')
 		udp:send(dg)
 
+        if love.keyboard.isDown(']') then
+            print("sending code request")
+            local dg = string.format("%s %s %s", entity, 'new', 'code')
+            udp:send(dg)
+        end
+
 		t=t-updaterate
     end
     repeat
@@ -52,7 +58,9 @@ function game.update(dt)
 				local x, y = parms:match("^(%-?[%d.e]*) (%-?[%d.e]*)$")
                 assert(x and y)
 				x, y = tonumber(x), tonumber(y)
-				world[ent] = {x=x, y=y}
+				games[ent] = {x=x, y=y}
+            elseif cmd == 'code' then
+				print("Code: ", parms)
             else
 				print("unrecognised command:", cmd)
 			end
@@ -63,7 +71,7 @@ function game.update(dt)
 end
 
 function game.draw()
-    for k, v in pairs(world) do
+    for k, v in pairs(games) do
 		love.graphics.print(k, v.x, v.y)
 	end
 end
