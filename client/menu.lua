@@ -30,7 +30,12 @@ function menu.update(dt)
 
     -- Host menu layout & elem
     suit.layout:reset((width/4) * 3, height/4)
-    suit.Button("Host", {id = 6}, suit.layout:row(200, 30))
+    local host = suit.Button("Host", {id = 6}, suit.layout:row(200, 30))
+
+    if host.hit then
+        nextState = require("client/host")
+        return
+    end
 
 end
 

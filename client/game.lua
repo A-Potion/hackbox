@@ -5,7 +5,7 @@ local adress, port = "37.27.51.34", 45165
 local entity
 local updaterate = 0.1
 
-local games = {code = code}
+local world = {}
 local t
 
 local width, height = love.graphics.getDimensions()
@@ -58,7 +58,7 @@ function game.update(dt)
 				local x, y = parms:match("^(%-?[%d.e]*) (%-?[%d.e]*)$")
                 assert(x and y)
 				x, y = tonumber(x), tonumber(y)
-				games[ent] = {x=x, y=y}
+				world[ent] = {x=x, y=y}
             elseif cmd == 'code' then
 				print("Code: ", parms)
             else
@@ -71,7 +71,7 @@ function game.update(dt)
 end
 
 function game.draw()
-    for k, v in pairs(games) do
+    for k, v in pairs(world) do
 		love.graphics.print(k, v.x, v.y)
 	end
 end
