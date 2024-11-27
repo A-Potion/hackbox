@@ -37,7 +37,7 @@ while running do
 		elseif cmd == 'quit' then
 			running = false;
         elseif cmd == 'new' then
-			local code = math.random(9999)
+			local code = #games + 1
             udp:sendto(string.format("%s %i", 'code', code), msg_or_ip, port_or_nil)
         else
 			print("unrecognised command:", cmd)
