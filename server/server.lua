@@ -6,7 +6,7 @@ udp:setsockname('*', 45165)
 
 local games = {} 
 local data, msg_or_ip, port_or_nil
-local entity, cmd, parms
+local entity, cmd, parms, code, ent
 
 local running = true
 
@@ -15,23 +15,28 @@ while running do
     data, msg_or_ip, port_or_nil = udp:receivefrom()
 	if data then
 		-- more of these funky match paterns!
-		entity, cmd, parms = data:match("^(%S*) (%S*) (.*)")
+		entity, cmd, parms = data:match("^(%S*) (%S+) (.*)")
+		print(parms)
         if cmd == 'move' then
-			local x, y = parms:match("^(%-?[%d.e]*) (%-?[%d.e]*)$")
+
+			code, x, y = parms:match("^([^%s]+)%s+([^%s]+)%s+([^%s]+)")
 			assert(x and y) -- validation is better, but asserts will serve.
 			-- don't forget, even if you matched a "number", the result is still a string!
 			-- thankfully conversion is easy in lua.
 			x, y = tonumber(x), tonumber(y)
 			-- and finally we stash it away
-			local ent = games[entity] or {x=0, y=0}
-			games[entity] = {x=ent.x+x, y=ent.y+y}
+			code = tonumber(code)
+			ent = games[code].entity
+			games[code].entity = {x=ent.x+x, y=ent.y+y}
 		elseif cmd == 'at' then
-			local x, y = parms:match("^(%-?[%d.e]*) (%-?[%d.e]*)$")
+			local code, x, y = parms:match("^([^%s]+)%s+([^%s]+)%s+([^%s]+)")
 			assert(x and y) -- validation is better, but asserts will serve.
-			x, y = tonumber(x), tonumber(y)
-			games[entity] = {x=x, y=y}
+			code, x, y = tonumber(code), tonumber(x), tonumber(y)
+			games[code].entity = {x=x, y=y}
+			print("at works")
 		elseif cmd == 'update' then
-			for k, v in pairs(games) do
+			code = tonumber(parms:match("([^%s]+)"))
+			for k, v in pairs(games[code]) do
 				udp:sendto(string.format("%s %s %d %d", k, 'at', v.x, v.y), msg_or_ip,  port_or_nil)
 			end
 		elseif cmd == 'quit' then
@@ -40,8 +45,14 @@ while running do
 			local code = #games + 1
 			print(code)
 			games[code] = {}
-			games[code].code = code
-            udp:sendto(string.format("%s %s %i",'w', 'code', code), msg_or_ip, port_or_nil)
+            udp:sendto(string.format("%s %i", 'code', code), msg_or_ip, port_or_nil)
+		elseif cmd == 'join' then
+			code = tonumber(parms:match("([^%s]+)"))
+			if games[code] then
+				print("Game is active")
+			else
+				print("Game is not active")
+			end
         else
 			print("unrecognised command:", cmd)
 		end

@@ -39,7 +39,7 @@ function host.update(dt)
 		data, msg = udp:receive()
 
 		if data then
-            ent, cmd, parms = data:match("^(%S*) (%S*) (.*)")
+            cmd, parms = data:match("^(%S*) (.*)")
             if cmd == 'code' then
 				code = parms
             else

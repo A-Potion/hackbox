@@ -20,7 +20,10 @@ function game.load()
     math.randomseed(os.time())
     entity = name.text
 
-    local dg = string.format("%s %s %d %d", entity, "at", 100, 100)
+    local dg = string.format("%s %s %s", entity, "join", code.text)
+    udp:send(dg)
+
+    local dg = string.format("%s %s %s %d %d", entity, "at", code.text, 100, 100)
     udp:send(dg)
     t = 0
 end
@@ -35,17 +38,11 @@ function game.update(dt)
 		if love.keyboard.isDown('left') then 	x=x-(20*t) end
 		if love.keyboard.isDown('right') then 	x=x+(20*t) end
 
-        local dg = string.format("%s %s %d %d", entity, 'move', x, y)
+        local dg = string.format("%s %s %s %d %d", entity, 'move', code.text, x, y)
 		udp:send(dg)
 
-        local dg = string.format("%s %s $", entity, 'update')
+        local dg = string.format("%s %s %s $", entity, 'update', code)
 		udp:send(dg)
-
-        if love.keyboard.isDown(']') then
-            print("sending code request")
-            local dg = string.format("%s %s %s", entity, 'new', 'code')
-            udp:send(dg)
-        end
 
 		t=t-updaterate
     end
