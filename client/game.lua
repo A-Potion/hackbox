@@ -75,6 +75,10 @@ function game.update(dt)
 				world[ent] = {x=x, y=y}
             elseif cmd == 'remove' then
                 print("Received remove command.")
+                if ent == entity then
+                    nextState = require("client/menu")
+                    return
+                end
                 world[ent] = nil
             else
 				print("unrecognised command:", cmd)

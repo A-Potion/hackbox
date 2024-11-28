@@ -12,11 +12,11 @@ function love.load()
 end
 
 function love.update(dt)
+    state.current.update(dt)
     if nextState ~= state.current then
         state.current = nextState
         state.current.load()
     end
-    state.current.update(dt)
 
 end
 

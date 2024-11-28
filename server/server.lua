@@ -7,6 +7,7 @@ udp:setsockname('*', 45165)
 local games = {} 
 local data, msg_or_ip, port_or_nil
 local entity, cmd, parms, code, ent
+local hosts = {}
 
 local running = true
 
@@ -17,6 +18,8 @@ function notifyEntityRemoval(code, entity)
 			print("Notified " .. client.ip .. ":" .. client.port)
 		end
 	end
+	udp:sendto(string.format("%s %s u", entity, 'remove'), hosts[code].ip, hosts[code].port)
+	print("Notified host" .. hosts[code].ip .. ":" .. hosts[code].port)
 end
 
 function cleanupLocalEntity(code, entity)
@@ -64,14 +67,16 @@ while running do
 		print(entity)
         if cmd == 'move' then
 			code, x, y = parms:match("^([^%s]+)%s+([^%s]+)%s+([^%s]+)")
-			assert(x and y) -- validation is better, but asserts will serve.
-			-- don't forget, even if you matched a "number", the result is still a string!
-			-- thankfully conversion is easy in lua.
-			x, y = tonumber(x), tonumber(y)
-			-- and finally we stash it away
 			code = tonumber(code)
 			ent = games[code][entity]
-			games[code][entity] = {x=ent.x+x, y=ent.y+y, ip=ent.ip, port=ent.port}
+			if ent then
+				assert(x and y) -- validation is better, but asserts will serve.
+				-- don't forget, even if you matched a "number", the result is still a string!
+				-- thankfully conversion is easy in lua.
+				x, y = tonumber(x), tonumber(y)
+				-- and finally we stash it away
+				games[code][entity] = {x=ent.x+x, y=ent.y+y, ip=ent.ip, port=ent.port}
+			end
 		elseif cmd == 'at' then
 			local code, x, y = parms:match("^([^%s]+)%s+([^%s]+)%s+([^%s]+)")
 			assert(x and y) -- validation is better, but asserts will serve.
@@ -93,7 +98,8 @@ while running do
 			local code = #games + 1
 			print("new game with code ", code)
 			games[code] = {}
-            udp:sendto(string.format("%s %i", 'code', code), msg_or_ip, port_or_nil)
+			hosts[code] = {ip = msg_or_ip, port = port_or_nil}
+            udp:sendto(string.format("%s %s %i", 'placeholder', 'code', code), msg_or_ip, port_or_nil)
 		elseif cmd == 'join' then
 			code = tonumber(parms:match("([^%s]+)"))
 			if games[code] then
@@ -101,10 +107,13 @@ while running do
 				games[code][entity] = {ip = msg_or_ip, port = port_or_nil, x = 0, y = 0}
 				udp:sendto(string.format("%s %i", 'code', code), msg_or_ip, port_or_nil)
 				udp:sendto(string.format("%s %s %d %d", entity, 'at', 0, 0), msg_or_ip,  port_or_nil)
+				udp:sendto(string.format("%s %s %s", entity, 'join', entity), hosts[code].ip, hosts[code].port)
 			else
 				print("Game is not active")
 				udp:sendto(string.format("%s %s", 'dne', 'no'), msg_or_ip, port_or_nil)
 			end
+		elseif cmd == 'kick' then
+
         else
 			print("unrecognised command:", cmd)
 		end

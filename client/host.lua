@@ -6,6 +6,7 @@ local adress, port = "37.27.51.34", 45165
 local entity
 local updaterate = 0.1
 local code = "loading..."
+local users = {}
 
 local world = {}
 local t
@@ -39,18 +40,41 @@ function host.update(dt)
 		data, msg = udp:receive()
 
 		if data then
-            cmd, parms = data:match("^(%S*) (.*)")
+            ent, cmd, parms = data:match("^(%S*) (%S*) (.*)")
             if cmd == 'code' then
 				code = parms
+            elseif cmd == 'join' then
+                table.insert(users, ent)
+            elseif cmd == 'remove' then
+                print("Received remove command.")
+                for i, user in ipairs(users) do
+                    if user == ent then
+                        table.remove(users, i)
+                        break
+                    end
+                end
             else
 				print("unrecognised command:", cmd)
 			end
-        elseif msg ~= 'timeout' then 
+        elseif msg ~= 'timeout' then
 			error("Network error: "..tostring(msg))
 		end
 	until not data
 
-    suit.Label("Code: " .. code, 100, 100)
+    suit.layout:reset(width/2, height/2)
+    suit.Label("Code: " .. code, suit.layout:row(200, 30))
+
+    if #users ~= 0 then
+        for i=1, #users do
+           if suit.Button(users[i], suit.layout:row(200, 30)).hit then
+                local dg = string.format("%s %s %s", users[i], 'quit', code)
+                udp:send(dg)
+           end
+        end
+    end
+
+    
+
 end
 
 function host.draw()
