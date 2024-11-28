@@ -62,9 +62,15 @@ function host.update(dt)
 	until not data
 
     suit.layout:reset(width/2, height/2)
+    suit.layout:padding(10)
     suit.Label("Code: " .. code, suit.layout:row(200, 30))
 
+
     if #users ~= 0 then
+        if suit.Button("Start!", suit.layout:row(200, 30)).hit then
+            local dg = string.format("placeholder %s %s", 'start', code)
+            udp:send(dg)
+       end
         for i=1, #users do
            if suit.Button(users[i], suit.layout:row(200, 30)).hit then
                 local dg = string.format("%s %s %s", users[i], 'quit', code)
@@ -75,6 +81,12 @@ function host.update(dt)
 
     
 
+end
+
+function love.quit()
+    local dg = string.format("placeholder %s %s", 'end', code)
+    udp:send(dg)
+    udp:close()
 end
 
 function host.draw()

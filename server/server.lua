@@ -1,5 +1,7 @@
 local socket = require "socket"
 local udp = socket.udp()
+local openaikey = require("conf")
+print(openaikey)
 
 udp:settimeout(0)
 udp:setsockname('*', 45165)
@@ -106,19 +108,33 @@ while running do
 			local code = #games + 1
 			print("new game with code ", code)
 			games[code] = {}
-			hosts[code] = {ip = msg_or_ip, port = port_or_nil}
+			hosts[code] = {ip = msg_or_ip, port = port_or_nil, active = true, accepting = true}
+            udp:sendto(string.format("%s %s %i", 'placeholder', 'code', code), msg_or_ip, port_or_nil)
+		elseif cmd == 'start' then
+			code = tonumber(parms:match("([^%s]+)"))
+			print("Starting game ", code)
+			hosts[code].accepting = false
+		elseif cmd == 'end' then
+			print("Game " .. parms .. " is closing.")
+			for k, v in pairs(games[code]) do
+				cleanupLocalEntity(code, k)
+			end
+			hosts[code].active = false
             udp:sendto(string.format("%s %s %i", 'placeholder', 'code', code), msg_or_ip, port_or_nil)
 		elseif cmd == 'join' then
 			code = tonumber(parms:match("([^%s]+)"))
-			if games[code] then
+			if hosts[code].active and hosts[code].accepting then
 				print("Game is active")
 				games[code][entity] = {ip = msg_or_ip, port = port_or_nil, x = 0, y = 0}
-				udp:sendto(string.format("%s %i", 'code', code), msg_or_ip, port_or_nil)
+				udp:sendto(string.format("placeholder %s %i", 'code', code), msg_or_ip, port_or_nil)
 				udp:sendto(string.format("%s %s %d %d", entity, 'at', 0, 0), msg_or_ip,  port_or_nil)
 				udp:sendto(string.format("%s %s %s", entity, 'join', entity), hosts[code].ip, hosts[code].port)
+			elseif hosts[code].active and hosts[code].accepting == false then
+				print("Game is active but not accepting new joins.")
+				udp:sendto(string.format("placeholder %s %i", 'abn', code), msg_or_ip, port_or_nil)
 			else
 				print("Game is not active")
-				udp:sendto(string.format("%s %s", 'dne', 'no'), msg_or_ip, port_or_nil)
+				udp:sendto(string.format("placeholder %s placeholder", 'dne'), msg_or_ip, port_or_nil)
 			end
 		elseif cmd == 'kick' then
 

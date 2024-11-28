@@ -15,6 +15,7 @@ local width, height = love.graphics.getDimensions()
 function game.load()
     love.window.setTitle("HackBox - Game: " .. code.text)
     udp = socket.udp()
+    gameexists = false
 
     udp:settimeout(0)
     udp:setpeername(adress, port)
@@ -29,10 +30,14 @@ function game.load()
         data, msg = udp:receive()
 
             if data then
-                cmd, parms = data:match("^(%S*) (.*)")
+                ent, cmd, parms = data:match("^(%S*) (%S*) (.*)")
                 print("Checking if game exists...")
                 if cmd == 'dne' then
                     print("Game does not exist")
+                    nextState = require("client/menu")
+                    return
+                elseif cmd == 'abn' then
+                    print("Game exists, but is in progress.")
                     nextState = require("client/menu")
                     return
                 elseif cmd == 'code' then
@@ -75,11 +80,11 @@ function game.update(dt)
 				world[ent] = {x=x, y=y}
             elseif cmd == 'remove' then
                 print("Received remove command.")
+                world[ent] = nil
                 if ent == entity then
                     nextState = require("client/menu")
                     return
                 end
-                world[ent] = nil
             else
 				print("unrecognised command:", cmd)
 			end
