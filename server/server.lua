@@ -11,15 +11,23 @@ local hosts = {}
 
 local running = true
 
-function notifyEntityRemoval(code, entity)
+function sendToAll(code, msg, send_to_host)
 	for _, client in pairs(games[code]) do
-		if type(client) == "table" then
-			udp:sendto(string.format("%s %s u", entity, 'remove'), client.ip, client.port)
-			print("Notified " .. client.ip .. ":" .. client.port)
+		if type(client) == "table"	then
+			udp:sendto(msg, client.ip, client.port)
+			print(string.format("Sent %s to client %s:%s", msg, client.ip, client.port))
+		end
+		if send_to_host then
+			udp:sendto(msg, hosts[code].ip, hosts[code].port)
+			print(string.format("Sent %s to host %s:%s", msg, hosts[code].ip, hosts[code].port))
 		end
 	end
-	udp:sendto(string.format("%s %s u", entity, 'remove'), hosts[code].ip, hosts[code].port)
-	print("Notified host" .. hosts[code].ip .. ":" .. hosts[code].port)
+end
+
+function notifyEntityRemoval(code, entity)
+	for _, client in pairs(games[code]) do
+			sendToAll(code, string.format("%s %s u", entity, 'remove'), true)
+	end
 end
 
 function cleanupLocalEntity(code, entity)
