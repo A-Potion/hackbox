@@ -8,6 +8,8 @@ local updaterate = 0.1
 local world = {}
 local t
 
+local gameexists = false
+
 local width, height = love.graphics.getDimensions()
 
 function game.load()
@@ -17,15 +19,30 @@ function game.load()
     udp:settimeout(0)
     udp:setpeername(adress, port)
 
-    math.randomseed(os.time())
     entity = name.text
 
     local dg = string.format("%s %s %s", entity, "join", code.text)
     udp:send(dg)
 
-    local dg = string.format("%s %s %s %d %d", entity, "at", code.text, 100, 100)
-    udp:send(dg)
-    t = 0
+    while not gameexists do
+        t = 0
+        data, msg = udp:receive()
+
+            if data then
+                cmd, parms = data:match("^(%S*) (.*)")
+                print("Checking if game exists...")
+                if cmd == 'dne' then
+                    print("Game does not exist")
+                    nextState = require("client/menu")
+                    return
+                elseif cmd == 'code' then
+                    print("Code: ", parms)
+                    gameexists = true
+                end
+            end
+    end
+
+
 end
 
 function game.update(dt)
@@ -56,8 +73,9 @@ function game.update(dt)
                 assert(x and y)
 				x, y = tonumber(x), tonumber(y)
 				world[ent] = {x=x, y=y}
-            elseif cmd == 'code' then
-				print("Code: ", parms)
+            elseif cmd == 'remove' then
+                print("Received remove command.")
+                world[ent] = nil
             else
 				print("unrecognised command:", cmd)
 			end
@@ -65,12 +83,20 @@ function game.update(dt)
 			error("Network error: "..tostring(msg))
 		end
 	until not data
+
+
 end
 
 function game.draw()
     for k, v in pairs(world) do
 		love.graphics.print(k, v.x, v.y)
 	end
+end
+
+function love.quit()
+    local dg = string.format("%s %s %s", entity, 'quit', code.text)
+    udp:send(dg)
+    udp:close()
 end
 
 return game
