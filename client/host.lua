@@ -7,7 +7,7 @@ local entity
 local updaterate = 0.1
 local code = "loading..."
 local users = {}
-
+local timeleft = -1
 local world = {}
 local t
 
@@ -53,6 +53,8 @@ function host.update(dt)
                         break
                     end
                 end
+            elseif cmd == 'time' then
+                timeleft = tonumber(parms)
             else
 				print("unrecognised command:", cmd)
 			end
@@ -63,6 +65,10 @@ function host.update(dt)
 
     suit.layout:reset(width/2, height/2)
     suit.layout:padding(10)
+    if timeleft > 0 then
+        suit.Label("Time left: " .. math.floor(timeleft/60) .. ":" .. math.floor(timeleft%60), suit.layout:row(200, 30))
+    end
+
     suit.Label("Code: " .. code, suit.layout:row(200, 30))
 
 
@@ -75,6 +81,11 @@ function host.update(dt)
            if suit.Button(users[i], suit.layout:row(200, 30)).hit then
                 local dg = string.format("%s %s %s", users[i], 'quit', code)
                 udp:send(dg)
+           end
+           if #users == 0 then
+                nextState = require("client/menu")
+                udp:close()
+                return
            end
         end
     end

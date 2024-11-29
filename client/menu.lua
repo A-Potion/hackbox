@@ -3,6 +3,8 @@ local width, height = love.graphics.getDimensions()
 name = {text = ""}
 code = {text = ""}
 
+error = ""
+
 function menu.load()
     love.window.setTitle("HackBox - Menu")
 end
@@ -18,6 +20,7 @@ function menu.update(dt)
     suit.Label("Code", {id = 3, align = "left"}, suit.layout:down(60, 30))
     suit.Input(code, {id = 4}, suit.layout:right(200, 30))
     local join = suit.Button("Join", {id = 5}, suit.layout:row(200, 30))
+    suit.Label(error, {id = 7, align = "left"}, suit.layout:down(60, 30))
 
     -- Join info passing
     if join.hit then
