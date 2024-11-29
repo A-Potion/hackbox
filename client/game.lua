@@ -34,7 +34,7 @@ function game.load()
 
             if data then
                 ent, cmd, parms = data:match("^(%S*) (%S*) (.*)")
-                print("Checking if game exists...")
+                print("Asked server if game " .. code.text .. "  exists.")
                 if cmd == 'dne' then
                     error = "Game does not exist"
                     nextState = require("client/menu")
@@ -44,7 +44,7 @@ function game.load()
                     nextState = require("client/menu")
                     return
                 elseif cmd == 'code' then
-                    print("Code: ", parms)
+                    print("Joined game ", parms)
                     gameexists = true
                 end
             end
@@ -66,7 +66,7 @@ function game.update(dt)
                 if cmd == "time" then
                     timeleft = tonumber(parms)
                 elseif cmd == 'remove' then
-                    print("Received remove command.")
+                    print("Received remove command for " .. ent .. ".")
                     world[ent] = nil
                     if ent == entity then
                         nextState = require("client/menu")
@@ -76,9 +76,9 @@ function game.update(dt)
                 elseif cmd == 'start' then
                     prompt = parms
                     prompt1, prompt2 = prompt:match("([^_]+)___([^_]+)")
-                    print("Prompt: " .. prompt)
+                    print("Received prompt: " .. prompt)
                 else
-                    print("unrecognised command:", cmd)
+                    print("Unrecognised command:", cmd)
                 end
             elseif msg ~= 'timeout' then 
                 error("Network error: "..tostring(msg))
@@ -107,9 +107,6 @@ end
 end
 
 function game.draw()
-    for k, v in pairs(world) do
-		love.graphics.print(k, v.x, v.y)
-	end
     suit.draw()
 end
 

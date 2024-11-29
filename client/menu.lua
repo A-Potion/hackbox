@@ -25,7 +25,7 @@ function menu.update(dt)
     -- Join info passing
     if join.hit then
         if name.text ~= "" and code.text ~= "" then
-            print(name.text .. " joins " .. code.text)
+            print(name.text .. " attempts to join game " .. code.text)
             nextState = require("client/game")
             return
         end

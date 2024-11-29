@@ -14,7 +14,7 @@ local t
 local width, height = love.graphics.getDimensions()
 
 function host.load()
-    love.window.setTitle("HackBox - Hosting")
+    love.window.setTitle("HackBox - Hosting: " .. code)
     udp = socket.udp()
 
     udp:settimeout(0)
@@ -23,7 +23,7 @@ function host.load()
     math.randomseed(os.time())
     entity = name.text
 
-    print("sending code request")
+    print("Asking server for code...")
     local dg = string.format("%s %s %s", entity, 'new', 'code')
     udp:send(dg)
     t = 0
@@ -32,10 +32,7 @@ end
 function host.update(dt)
     t = t + dt
 
-    if t > updaterate then
-
-		t=t-updaterate
-    end
+    
     repeat
 		data, msg = udp:receive()
 
@@ -43,10 +40,11 @@ function host.update(dt)
             ent, cmd, parms = data:match("^(%S*) (%S*) (.*)")
             if cmd == 'code' then
 				code = parms
+                print("Received code:" .. code)
             elseif cmd == 'join' then
                 table.insert(users, ent)
             elseif cmd == 'remove' then
-                print("Received remove command.")
+                print("Received remove command for " .. ent .. ".")
                 for i, user in ipairs(users) do
                     if user == ent then
                         table.remove(users, i)
@@ -56,9 +54,9 @@ function host.update(dt)
             elseif cmd == 'time' then
                 timeleft = tonumber(parms)
             elseif cmd == 'start' then
-                print(parms)
+                print("Received start command and sentence: " .. parms)
             else
-				print("unrecognised command:", cmd)
+				print("Unrecognised command:", cmd)
 			end
         elseif msg ~= 'timeout' then
 			error("Network error: "..tostring(msg))
@@ -77,6 +75,7 @@ function host.update(dt)
     if #users ~= 0 then
         if timeleft <= 0 then
             if suit.Button("Start!", suit.layout:row(200, 30)).hit then
+                print("Sent request to start game " .. code .. " to server.")
                 local dg = string.format("placeholder %s %s", 'start', code)
                 udp:send(dg)
             end
@@ -95,6 +94,7 @@ end
 
 function love.quit()
     local dg = string.format("placeholder %s %s", 'end', code)
+    print("Sent request to end game " .. code .. " to server.")
     udp:send(dg)
     udp:close()
 end

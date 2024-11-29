@@ -1,7 +1,5 @@
 local socket = require "socket"
 local udp = socket.udp()
-local openaikey = require("conf")
-print(openaikey)
 
 udp:settimeout(0)
 udp:setsockname('*', 45165)
@@ -48,7 +46,7 @@ function updateRoundTime()
 				hosts[i].round_seconds = hosts[i].round_seconds - 1
 				hosts[i].last_update = current_time
 				sendToAll(i, string.format("placeholder %s %s", 'time', hosts[i].round_seconds), true)
-				print("Round seconds for host", i, ":", hosts[i].round_seconds)  -- Debug print
+				print("Round seconds for game ", i, ":", hosts[i].round_seconds)  -- Debug print
 			end
 		end
 	end
@@ -75,7 +73,7 @@ end
 
 function cleanupLocalEntity(code, entity)
 	-- Print debug info
-	print("Cleaning up local reference to entity:", entity)
+	print("Cleaning up local reference to: " .. entity .. "in game: " .. code)
 
 	-- Notify clients about entity removal
 	notifyEntityRemoval(code, entity)
@@ -106,7 +104,7 @@ function cleanupLocalEntity(code, entity)
 
 	-- Verify cleanup
 	print("Local entity cleanup complete. Verifying removal:", entity)
-	print("World entry exists:", games[code][entity] ~= nil)
+	print("Entity entry exists:", games[code][entity] ~= nil)
 end
 
 print "Beginning server loop."
@@ -117,20 +115,19 @@ while running do
 	if data then
 		-- more of these funky match paterns!
 		entity, cmd, parms = data:match("^(%S*) (%S+) (.*)")
-		print(entity)
 		if cmd == 'quit' then
 			code = tonumber(parms:match("([^%s]+)"))
 			cleanupLocalEntity(code, entity)
 			print(entity ..  " left.")
         elseif cmd == 'new' then
 			local code = #games + 1
-			print("new game with code ", code)
+			print("Created new game with code: ", code)
 			games[code] = {}
 			hosts[code] = {ip = msg_or_ip, port = port_or_nil, active = true, accepting = true, round_seconds = -1}
             udp:sendto(string.format("%s %s %i", 'placeholder', 'code', code), msg_or_ip, port_or_nil)
 		elseif cmd == 'start' then
 			code = tonumber(parms:match("([^%s]+)"))
-			print("Starting game ", code)
+			print("Starting game: ", code)
 			hosts[code].accepting = false
 			hosts[code].round_seconds = 60
 			hosts[code].start_time = os.time()
@@ -149,7 +146,7 @@ while running do
 			code = tonumber(parms:match("([^%s]+)"))
 			if hosts[code] then
 				if hosts[code].active and hosts[code].accepting then
-					print("Game is active")
+					print("Game " .. code .. " is active")
 					games[code][entity] = {ip = msg_or_ip, port = port_or_nil, x = 0, y = 0}
 					udp:sendto(string.format("placeholder %s %i", 'code', code), msg_or_ip, port_or_nil)
 					udp:sendto(string.format("%s %s %d %d", entity, 'at', 0, 0), msg_or_ip,  port_or_nil)
@@ -158,15 +155,15 @@ while running do
 					print("Game " .. code .. " is active but not accepting new joins.")
 					udp:sendto(string.format("placeholder %s %i", 'abn', code), msg_or_ip, port_or_nil)
 				else
-					print("Game is not active")
+					print("Game " .. code .. " is not active")
 					udp:sendto(string.format("placeholder %s placeholder", 'dne'), msg_or_ip, port_or_nil)
 				end
 			else
-				print("Game is not active")
+				print("Game " .. code .. " is not active")
 				udp:sendto(string.format("placeholder %s placeholder", 'dne'), msg_or_ip, port_or_nil)
 			end
         else
-			print("unrecognised command:", cmd)
+			print("Unrecognised command:", cmd)
 		end
 	elseif msg_or_ip ~= 'timeout' then
 		error("Unknown network error: "..tostring(msg))
