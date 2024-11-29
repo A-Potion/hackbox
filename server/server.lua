@@ -111,38 +111,14 @@ end
 
 print "Beginning server loop."
 while running do
+	updateRoundTime()
 
     data, msg_or_ip, port_or_nil = udp:receivefrom()
 	if data then
 		-- more of these funky match paterns!
 		entity, cmd, parms = data:match("^(%S*) (%S+) (.*)")
 		print(entity)
-        if cmd == 'move' then
-			code, x, y = parms:match("^([^%s]+)%s+([^%s]+)%s+([^%s]+)")
-			code = tonumber(code)
-			ent = games[code][entity]
-			if ent then
-				assert(x and y) -- validation is better, but asserts will serve.
-				-- don't forget, even if you matched a "number", the result is still a string!
-				-- thankfully conversion is easy in lua.
-				x, y = tonumber(x), tonumber(y)
-				-- and finally we stash it away
-				games[code][entity] = {x=ent.x+x, y=ent.y+y, ip=ent.ip, port=ent.port}
-			end
-		elseif cmd == 'at' then
-			local code, x, y = parms:match("^([^%s]+)%s+([^%s]+)%s+([^%s]+)")
-			assert(x and y) -- validation is better, but asserts will serve.
-			code, x, y = tonumber(code), tonumber(x), tonumber(y)
-			games[code][entity] = {x=x, y=y, ip=games[code][
-			entity].ip, port=games[code][entity].port}
-		elseif cmd == 'update' then
-			code = tonumber(parms:match("([^%s]+)"))
-			print(parms)
-			for k, v in pairs(games[code]) do
-				print(k, v.x, v.y)
-				udp:sendto(string.format("%s %s %d %d", k, 'at', v.x, v.y), msg_or_ip,  port_or_nil)
-			end
-		elseif cmd == 'quit' then
+		if cmd == 'quit' then
 			code = tonumber(parms:match("([^%s]+)"))
 			cleanupLocalEntity(code, entity)
 			print(entity ..  " left.")
@@ -181,6 +157,9 @@ while running do
 				elseif hosts[code].active and hosts[code].accepting == false then
 					print("Game " .. code .. " is active but not accepting new joins.")
 					udp:sendto(string.format("placeholder %s %i", 'abn', code), msg_or_ip, port_or_nil)
+				else
+					print("Game is not active")
+					udp:sendto(string.format("placeholder %s placeholder", 'dne'), msg_or_ip, port_or_nil)
 				end
 			else
 				print("Game is not active")

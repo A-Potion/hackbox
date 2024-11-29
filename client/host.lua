@@ -75,10 +75,12 @@ function host.update(dt)
 
 
     if #users ~= 0 then
-        if suit.Button("Start!", suit.layout:row(200, 30)).hit then
-            local dg = string.format("placeholder %s %s", 'start', code)
-            udp:send(dg)
-       end
+        if timeleft <= 0 then
+            if suit.Button("Start!", suit.layout:row(200, 30)).hit then
+                local dg = string.format("placeholder %s %s", 'start', code)
+                udp:send(dg)
+            end
+        end
         for i=1, #users do
            if suit.Button(users[i], suit.layout:row(200, 30)).hit then
                 local dg = string.format("%s %s %s", users[i], 'quit', code)

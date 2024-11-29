@@ -5,10 +5,13 @@ local adress, port = "37.27.51.34", 45165
 local entity
 local updaterate = 0.1
 
+local prompt = ""
 local world = {}
 local t
+local timeleft = 0
 
 local gameexists = false
+local input = {text = ""}
 
 local width, height = love.graphics.getDimensions()
 
@@ -54,33 +57,14 @@ function game.update(dt)
     if gameexists then
         t = t + dt
 
-        if t > updaterate then
-            local x, y = 0, 0
-            if love.keyboard.isDown('up') then 	y=y-(20*t) end
-            if love.keyboard.isDown('down') then 	y=y+(20*t) end
-            if love.keyboard.isDown('left') then 	x=x-(20*t) end
-            if love.keyboard.isDown('right') then 	x=x+(20*t) end
-
-            local dg = string.format("%s %s %s %d %d", entity, 'move', code.text, x, y)
-            udp:send(dg)
-
-            local dg = string.format("%s %s %s", entity, 'update', code.text)
-            udp:send(dg)
-
-            t=t-updaterate
-        end
+        
         repeat
             data, msg = udp:receive()
 
             if data then
                 ent, cmd, parms = data:match("^(%S*) (%S*) (.*)")
-                if cmd == 'at' then
-                    local x, y = parms:match("^(%-?[%d.e]*) (%-?[%d.e]*)$")
-                    assert(x and y)
-                    x, y = tonumber(x), tonumber(y)
-                    world[ent] = {x=x, y=y}
-                elseif cmd == "time" then
-                    print(parms)
+                if cmd == "time" then
+                    timeleft = tonumber(parms)
                 elseif cmd == 'remove' then
                     print("Received remove command.")
                     world[ent] = nil
@@ -90,7 +74,9 @@ function game.update(dt)
                         return
                     end
                 elseif cmd == 'start' then
-                    print(parms)
+                    prompt = parms
+                    prompt1, prompt2 = prompt:match("([^_]+)___([^_]+)")
+                    print("Prompt: " .. prompt)
                 else
                     print("unrecognised command:", cmd)
                 end
@@ -99,6 +85,24 @@ function game.update(dt)
             end
         until not data
 
+    suit.layout:reset(width/8, height/2)
+    suit.layout:padding(10)
+    
+
+    if timeleft > 0 then
+        suit.Label("Time left: " .. math.floor(timeleft/60) .. ":" .. math.floor(timeleft%60), suit.layout:row(width/2, height/8))
+    end
+
+    if prompt == "" then
+        suit.Label("Waiting for host to start the game...", {id = 1}, suit.layout:row(200, 30))
+    else
+        suit.Label(prompt1, {id = 1}, suit.layout:row(width/5, 30))
+        suit.Input(input, {id = 2}, suit.layout:col(width/8, 30))
+        suit.Label(prompt2, {id = 3}, suit.layout:col(width/5, 30))
+        suit.Button("Submit", {id = 4}, suit.layout:row(width/2, 30))
+    end
+
+
 end
 end
 
@@ -106,6 +110,7 @@ function game.draw()
     for k, v in pairs(world) do
 		love.graphics.print(k, v.x, v.y)
 	end
+    suit.draw()
 end
 
 function love.quit()
