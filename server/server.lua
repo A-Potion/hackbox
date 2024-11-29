@@ -13,6 +13,33 @@ local hosts = {}
 
 local running = true
 
+function getSentence()
+	local sentences = {}
+	for line in io.lines("sentences.txt") do
+		table.insert(sentences, line)
+	end
+	local sentence_number = #sentences
+	if sentence_number > 0 then
+		local random_index = math.random(1, sentence_number)
+		return sentences[random_index]
+	end
+end
+
+function makeBlank(sentence)
+	local words = {}
+
+	for i=#sentence, 1, -1 do
+		if sentence:sub(i, i) == " " then
+			words[#words + 1] = i
+		end
+	end
+	random_word = math.random(1, #words)
+	start_pos = words[random_word]
+	end_pos = sentence:find(" ", start_pos)
+	blanked_word = sentence:sub(1, start_pos) .. "___" .. sentence:sub(end_pos, #sentence)
+	return blanked_word
+end
+
 function updateRoundTime()
 	for i=1, #hosts do
 		if hosts[i].active and hosts[i].accepting == false then
@@ -84,7 +111,7 @@ end
 
 print "Beginning server loop."
 while running do
-	updateRoundTime()
+
     data, msg_or_ip, port_or_nil = udp:receivefrom()
 	if data then
 		-- more of these funky match paterns!
@@ -132,7 +159,8 @@ while running do
 			hosts[code].round_seconds = 60
 			hosts[code].start_time = os.time()
 			hosts[code].last_update = os.time()
-			-- sendToAll(code, string.format("placeholder %s %i", 'start', round_seconds), true)
+			hosts[code].sentence = makeBlank(getSentence())
+			sendToAll(code, string.format("placeholder %s %s", 'start', hosts[code].sentence), true)
 		elseif cmd == 'end' then
 			print("Game " .. parms .. " is closing.")
 			if games[code] then
@@ -158,8 +186,6 @@ while running do
 				print("Game is not active")
 				udp:sendto(string.format("placeholder %s placeholder", 'dne'), msg_or_ip, port_or_nil)
 			end
-		elseif cmd == 'kick' then
-
         else
 			print("unrecognised command:", cmd)
 		end

@@ -55,6 +55,8 @@ function host.update(dt)
                 end
             elseif cmd == 'time' then
                 timeleft = tonumber(parms)
+            elseif cmd == 'start' then
+                print(parms)
             else
 				print("unrecognised command:", cmd)
 			end
@@ -63,7 +65,7 @@ function host.update(dt)
 		end
 	until not data
 
-    suit.layout:reset(width/2, height/2)
+    suit.layout:reset(width/3, height/3)
     suit.layout:padding(10)
     if timeleft > 0 then
         suit.Label("Time left: " .. math.floor(timeleft/60) .. ":" .. math.floor(timeleft%60), suit.layout:row(200, 30))
@@ -81,11 +83,6 @@ function host.update(dt)
            if suit.Button(users[i], suit.layout:row(200, 30)).hit then
                 local dg = string.format("%s %s %s", users[i], 'quit', code)
                 udp:send(dg)
-           end
-           if #users == 0 then
-                nextState = require("client/menu")
-                udp:close()
-                return
            end
         end
     end

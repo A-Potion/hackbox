@@ -89,6 +89,8 @@ function game.update(dt)
                         udp:close()
                         return
                     end
+                elseif cmd == 'start' then
+                    print(parms)
                 else
                     print("unrecognised command:", cmd)
                 end
