@@ -9,6 +9,8 @@ local prompt
 local world = {}
 local t
 local timeleft
+local round
+local myanswer = { text = "" }
 
 local gameexists = false
 local input = {text = ""}
@@ -46,6 +48,10 @@ function game.load()
                 elseif cmd == 'code' then
                     print("Joined game ", parms)
                     gameexists = true
+                elseif cmd == 'uat' then
+                    error = "Please choose a different username."
+                    nextState = require("client/menu")
+                    return
                 end
             end
     end
@@ -81,7 +87,10 @@ function game.update(dt)
                         world[round] = {}
                     end
                     table.insert(world[round], answer)
-
+                elseif cmd == 'voting' then
+                    if parms == 'preview' then
+                        preview_now = true
+                    end
                 elseif cmd == 'start' then
                     prompt = parms
                     prompt1, prompt2 = prompt:match("([^_]+)___([^_]+)")
@@ -104,14 +113,27 @@ function game.update(dt)
 
     if prompt == "" then
         suit.Label("Waiting for host to start the game...", {id = 1}, suit.layout:row(200, 30))
-    else
+    elseif prompt ~= "" and preview_now ~= true then
         suit.Label(prompt1, {id = 1}, suit.layout:row(width/5, 30))
-        suit.Input(input, {id = 2}, suit.layout:col(width/8, 30))
+        suit.Input(myanswer, {id = 2}, suit.layout:col(width/8, 30))
         
         suit.Label(prompt2, {id = 3}, suit.layout:col(width/5, 30))
         if suit.Button("Submit", {id = 4}, suit.layout:row(width/2, 30)).hit then
-            if input.text ~= "" then
-                local dg = string.format("%s %s %s %s", entity, 'submit', code.text, input.text)
+            if myanswer.text ~= "" then
+                local dg = string.format("%s %s %s %s", entity, 'submit', code.text, myanswer.text)
+                udp:send(dg)
+                print(dg)
+            end
+        end
+    end
+
+    if preview_now == true then
+        for _, answer in pairs (world[round]) do
+            if answer ~= myanswer.text then
+                return
+            end
+            if suit.Button(answer, suit.layout:row(width/2, 30)).hit then
+                local dg = string.format("%s %s %s %s", entity, 'vote', code.text, answer)
                 udp:send(dg)
                 print(dg)
             end

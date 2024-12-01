@@ -52,11 +52,14 @@ function updateRoundTime()
 	for i=1, #hosts do
 		if hosts[i].active and hosts[i].running == true then
 			local current_time = os.time()
-			if current_time - hosts[i].last_update >= 1 and games[i] ~= {} then
+			if current_time - hosts[i].last_update >= 1 and games[i] ~= {} and hosts[i].round_seconds > 0 then
 				hosts[i].round_seconds = hosts[i].round_seconds - 1
 				hosts[i].last_update = current_time
 				sendToAll(i, string.format("placeholder %s %s", 'time', hosts[i].round_seconds), true)
 				print("Round seconds for game ", i, ":", hosts[i].round_seconds)  -- Debug print
+			elseif hosts[i].round_seconds == 0 and hosts[i].preview_now ~= true then
+				hosts[i].preview_now = true
+				sendToAll(i, string.format("placeholder %s %s", 'voting', 'preview'), true)
 			end
 		end
 	end
@@ -68,10 +71,10 @@ function sendToAll(code, msg, send_to_host)
 			udp:sendto(msg, client.ip, client.port)
 			print(string.format("Sent %s to client %s:%s", msg, client.ip, client.port))
 		end
-		if send_to_host and hosts[code].active then
-			udp:sendto(msg, hosts[code].ip, hosts[code].port)
-			print(string.format("Sent %s to host %s:%s", msg, hosts[code].ip, hosts[code].port))
-		end
+	end
+	if send_to_host then
+		udp:sendto(msg, hosts[code].ip, hosts[code].port)
+		print(string.format("Sent %s to host %s:%s", msg, hosts[code].ip, hosts[code].port))
 	end
 end
 
@@ -146,11 +149,12 @@ while running do
 			hosts[code].sentence = makeBlank(getSentence())
 			sendToAll(code, string.format("placeholder %s %s", 'start', hosts[code].sentence), true)
 		elseif cmd == 'end' then
+			code = tonumber(parms:match("([^%s]+)"))
 			print("Game " .. parms .. " is closing.")
 			if games[code] then
-				games[code].active = false
+				hosts[code].active = false
 				for k, v in pairs(games[code]) do
-					cleanupLocalEntity(code, k)
+				cleanupLocalEntity(code, k)
 				end
 			games[code] = {}
 			end
@@ -170,11 +174,14 @@ while running do
 		elseif cmd == 'join' then
 			code = tonumber(parms:match("([^%s]+)"))
 			if hosts[code] then
-				if hosts[code].active and checkIfInGame(code, entity) ~= false then
+				if hosts[code].active == true and checkIfInGame(code, entity) ~= true then
 					print("Game " .. code .. " is active")
 					games[code][entity] = {ip = msg_or_ip, port = port_or_nil, 	points = 0}
 					udp:sendto(string.format("placeholder %s %i", 'code', code), msg_or_ip, port_or_nil)
 					udp:sendto(string.format("%s %s %s", entity, 'join', entity), hosts[code].ip, hosts[code].port)
+				elseif hosts[code].active == true and checkIfInGame(code, entity) == true then
+					print("Game " .. code .. " already has " .. entity)
+					udp:sendto(string.format("placeholder %s placeholder", 'uat'), msg_or_ip, port_or_nil)
 				else
 					print("Game " .. code .. " is not active")
 					udp:sendto(string.format("placeholder %s placeholder", 'dne'), msg_or_ip, port_or_nil)
