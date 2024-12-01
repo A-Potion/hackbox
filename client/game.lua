@@ -5,10 +5,10 @@ local adress, port = "37.27.51.34", 45165
 local entity
 local updaterate = 0.1
 
-local prompt = ""
+local prompt
 local world = {}
 local t
-local timeleft = 0
+local timeleft
 
 local gameexists = false
 local input = {text = ""}
@@ -16,9 +16,12 @@ local input = {text = ""}
 local width, height = love.graphics.getDimensions()
 
 function game.load()
+    prompt = ""
+
     love.window.setTitle("HackBox - Game: " .. code.text)
     udp = socket.udp()
     gameexists = false
+    timeleft = 0
 
     udp:settimeout(0)
     udp:setpeername(adress, port)
@@ -32,15 +35,12 @@ function game.load()
         t = 0
         data, msg = udp:receive()
 
+
             if data then
                 ent, cmd, parms = data:match("^(%S*) (%S*) (.*)")
                 print("Asked server if game " .. code.text .. "  exists.")
                 if cmd == 'dne' then
                     error = "Game does not exist"
-                    nextState = require("client/menu")
-                    return
-                elseif cmd == 'abn' then
-                    error = "Game exists, but is in progress."
                     nextState = require("client/menu")
                     return
                 elseif cmd == 'code' then
@@ -69,10 +69,19 @@ function game.update(dt)
                     print("Received remove command for " .. ent .. ".")
                     world[ent] = nil
                     if ent == entity then
-                        nextState = require("client/menu")
                         udp:close()
+                        nextState = require("client/menu")
                         return
                     end
+                elseif cmd == 'answer' then
+                    round, answer = parms:match("^(%S+)%s+(.*)")
+                    round = tonumber(round)
+
+                    if not world[round] then
+                        world[round] = {}
+                    end
+                    table.insert(world[round], answer)
+
                 elseif cmd == 'start' then
                     prompt = parms
                     prompt1, prompt2 = prompt:match("([^_]+)___([^_]+)")
@@ -98,8 +107,15 @@ function game.update(dt)
     else
         suit.Label(prompt1, {id = 1}, suit.layout:row(width/5, 30))
         suit.Input(input, {id = 2}, suit.layout:col(width/8, 30))
+        
         suit.Label(prompt2, {id = 3}, suit.layout:col(width/5, 30))
-        suit.Button("Submit", {id = 4}, suit.layout:row(width/2, 30))
+        if suit.Button("Submit", {id = 4}, suit.layout:row(width/2, 30)).hit then
+            if input.text ~= "" then
+                local dg = string.format("%s %s %s %s", entity, 'submit', code.text, input.text)
+                udp:send(dg)
+                print(dg)
+            end
+        end
     end
 
 

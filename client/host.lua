@@ -5,15 +5,16 @@ local adress, port = "37.27.51.34", 45165
 
 local entity
 local updaterate = 0.1
-local code = "loading..."
-local users = {}
-local timeleft = -1
-local world = {}
 local t
+local code, timeleft
 
 local width, height = love.graphics.getDimensions()
 
 function host.load()
+    code = "loading..."
+    users = {}
+    timeleft = -1
+
     love.window.setTitle("HackBox - Hosting: " .. code)
     udp = socket.udp()
 
@@ -21,7 +22,6 @@ function host.load()
     udp:setpeername(adress, port)
 
     math.randomseed(os.time())
-    entity = name.text
 
     print("Asking server for code...")
     local dg = string.format("%s %s %s", entity, 'new', 'code')
@@ -31,6 +31,16 @@ end
 
 function host.update(dt)
     t = t + dt
+
+    suit.layout:reset(10, 10)
+    if suit.Button("End", suit.layout:row(200, 30)).hit then
+        local dg = string.format("placeholder %s %s", 'end', code)
+        print("Sent request to end game " .. code .. " to server.")
+        udp:send(dg)
+        udp:close()
+        nextState = require("client/menu")
+        return
+    end
 
     
     repeat
@@ -53,6 +63,9 @@ function host.update(dt)
                 end
             elseif cmd == 'time' then
                 timeleft = tonumber(parms)
+            elseif cmd == 'answer' then
+                round, answer = parms:match("^(%S*) (.*)")
+                print("Received answer from " .. ent .. " for round " .. round .. ": " .. answer)
             elseif cmd == 'start' then
                 print("Received start command and sentence: " .. parms)
             else
