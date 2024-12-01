@@ -7,13 +7,13 @@ local updaterate = 0.1
 
 local prompt
 local world = {}
-local t
-local timeleft
-local round
+local timeleft, round, t, preview_now, voting_now
+local submitted = {}
 local myanswer = { text = "" }
 
 local gameexists = false
 local input = {text = ""}
+round = 0
 
 local width, height = love.graphics.getDimensions()
 
@@ -90,11 +90,18 @@ function game.update(dt)
                 elseif cmd == 'voting' then
                     if parms == 'preview' then
                         preview_now = true
+                    elseif parns == 'start' then
+                        voting_now = true
+                        preview_now = false
+                    elseif parms == 'end' then
+                        voting_now = false
                     end
                 elseif cmd == 'start' then
                     prompt = parms
                     prompt1, prompt2 = prompt:match("([^_]+)___([^_]+)")
                     print("Received prompt: " .. prompt)
+                    round = round + 1
+                    submitted[round] = false
                 else
                     print("Unrecognised command:", cmd)
                 end
@@ -115,24 +122,33 @@ function game.update(dt)
         suit.Label("Waiting for host to start the game...", {id = 1}, suit.layout:row(200, 30))
     elseif prompt ~= "" and preview_now ~= true then
         suit.Label(prompt1, {id = 1}, suit.layout:row(width/5, 30))
-        suit.Input(myanswer, {id = 2}, suit.layout:col(width/8, 30))
+        if submitted[round] == false then
+            suit.Input(myanswer, {id = 2}, suit.layout:col(width/8, 30))
+        else
+            suit.Label(myanswer.text, {id = 2}, suit.layout:col(width/8, 30))
+        end
         
         suit.Label(prompt2, {id = 3}, suit.layout:col(width/5, 30))
-        if suit.Button("Submit", {id = 4}, suit.layout:row(width/2, 30)).hit then
-            if myanswer.text ~= "" then
-                local dg = string.format("%s %s %s %s", entity, 'submit', code.text, myanswer.text)
-                udp:send(dg)
-                print(dg)
+
+
+
+        if submitted[round] == false then
+            if suit.Button("Submit", {id = 4}, suit.layout:row(width/2, 30)).hit then
+                if myanswer.text ~= "" then
+                    local dg = string.format("%s %s %s %s", entity, 'submit', code.text, myanswer.text)
+                    submitted[round] = true
+                    udp:send(dg)
+                    print(dg)
+                end
             end
         end
     end
 
     if preview_now == true then
-        for _, answer in pairs (world[round]) do
-            if answer ~= myanswer.text then
+        for i=1, #world[round] do
+            if world[round][i] == myanswer.text then
                 return
-            end
-            if suit.Button(answer, suit.layout:row(width/2, 30)).hit then
+            elseif suit.Button(world[round][i], suit.layout:row(width/2, 30)).hit then
                 local dg = string.format("%s %s %s %s", entity, 'vote', code.text, answer)
                 udp:send(dg)
                 print(dg)
