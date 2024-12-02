@@ -146,12 +146,12 @@ function game.update(dt)
 
     if preview_now == true then
         for i=1, #world[round] do
-            if world[round][i] == myanswer.text then
-                return
-            elseif suit.Button(world[round][i], suit.layout:row(width/2, 30)).hit then
-                local dg = string.format("%s %s %s %s", entity, 'vote', code.text, answer)
+            if world[round][i] ~= myanswer.text then
+                if suit.Button(world[round][i], suit.layout:row(width/2, 30)).hit then
+                local dg = string.format("%s %s %s %i %s", entity, 'vote', code.text, round, world[round][i])
                 udp:send(dg)
                 print(dg)
+                end
             end
         end
     end
