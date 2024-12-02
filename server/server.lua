@@ -142,7 +142,7 @@ while running do
 			code = tonumber(parms:match("([^%s]+)"))
 			print("Starting game: ", code)
 			hosts[code].running = true
-			hosts[code].round_seconds = 60
+			hosts[code].round_seconds = 15
 			hosts[code].round = 1
 			hosts[code].start_time = os.time()
 			hosts[code].last_update = os.time()

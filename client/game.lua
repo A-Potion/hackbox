@@ -10,6 +10,7 @@ local world = {}
 local timeleft, round, t, preview_now, voting_now
 local submitted = {}
 local myanswer = { text = "" }
+local voted = {}
 
 local gameexists = false
 local input = {text = ""}
@@ -90,11 +91,13 @@ function game.update(dt)
                 elseif cmd == 'voting' then
                     if parms == 'preview' then
                         preview_now = true
+                        voting_now = false
                     elseif parns == 'start' then
                         voting_now = true
                         preview_now = false
                     elseif parms == 'end' then
                         voting_now = false
+                        preview_now = false
                     end
                 elseif cmd == 'start' then
                     prompt = parms
@@ -120,7 +123,7 @@ function game.update(dt)
 
     if prompt == "" then
         suit.Label("Waiting for host to start the game...", {id = 1}, suit.layout:row(200, 30))
-    elseif prompt ~= "" and preview_now ~= true then
+    elseif prompt ~= "" and preview_now ~= true and voting_now ~= true then
         suit.Label(prompt1, {id = 1}, suit.layout:row(width/5, 30))
         if submitted[round] == false then
             suit.Input(myanswer, {id = 2}, suit.layout:col(width/8, 30))
@@ -144,16 +147,19 @@ function game.update(dt)
         end
     end
 
-    if preview_now == true then
+    if voting_now == true and voted[round] ~= true then
         for i=1, #world[round] do
             if world[round][i] ~= myanswer.text then
                 if suit.Button(world[round][i], suit.layout:row(width/2, 30)).hit then
                 local dg = string.format("%s %s %s %i %s", entity, 'vote', code.text, round, world[round][i])
                 udp:send(dg)
+                voted[round] = true
                 print(dg)
                 end
             end
         end
+    elseif preview_now == true then
+        suit.Label("Voting will start soon... Look at the host's screen for preview!", suit.layout:row(width/2, height/8))
     end
 
 

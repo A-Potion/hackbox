@@ -6,7 +6,11 @@ local adress, port = "37.27.51.34", 45165
 local entity
 local updaterate = 0.1
 local t
-local code, timeleft
+local code, timeleft, voting_now, preview_now, round
+local world = {}
+local round = 1
+local display = {}
+
 
 local width, height = love.graphics.getDimensions()
 
@@ -65,9 +69,24 @@ function host.update(dt)
                 timeleft = tonumber(parms)
             elseif cmd == 'answer' then
                 round, answer = parms:match("^(%S*) (.*)")
+                round = tonumber(round)
+                table.insert(world[round], answer)
                 print("Received answer from " .. ent .. " for round " .. round .. ": " .. answer)
             elseif cmd == 'start' then
+                world[round] = {}
+                display[round] = {}
                 print("Received start command and sentence: " .. parms)
+            elseif cmd == 'voting' then
+                if parms == 'preview' then
+                    preview_now = true
+                    voting_now = false
+                elseif parns == 'start' then
+                    voting_now = true
+                    preview_now = false
+                elseif parms == 'end' then
+                    voting_now = false
+                    preview_now = false
+                end
             else
 				print("Unrecognised command:", cmd)
 			end
@@ -99,6 +118,27 @@ function host.update(dt)
                 udp:send(dg)
            end
         end
+    end
+
+    if preview_now == true then
+        if display[round].started ~= true then
+            display[round].started = true
+            display[round].elapsed = 0
+            display[round].displaying = 1
+        end
+        display[round].elapsed = display[round].elapsed + dt
+
+        if display[round].elapsed % 5 == 0 then
+            display[round].displaying = display[round].displaying + 1
+            if display[round].displaying > #world[round] then
+                preview_now = false
+                voting_now = true
+                dg = string.format("placeholder %s %s", 'voting', 'preview_done')
+                udp:send(dg)
+            end
+        end
+        print(world[round][display[round].displaying])
+        suit.Label(world[round][display[round].displaying], suit.layout:row(width/2, 30))
     end
 
     
